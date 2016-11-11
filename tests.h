@@ -13,13 +13,13 @@
 const size_t numberOfElements = 100001;
 const int module = 1000000;
 
-const double o1_time = 10 * 1e-06;
+const double o1_time = 5 * 1e-06;
 /* tested on:
  * Intel Core i5-4200U 1.6GHz
  * 8GB RAM
  * AMD Radeon R7 M265 2GB
  *
- * average O(1) time = 1e-06, so we can take constant = 10 and get O(1) time = constant * 1e-06
+ * average O(1) time = 1e-06, so we can take constant = 5 and get O(1) time = constant * 1e-06
 */
 
 
@@ -34,7 +34,7 @@ void fill(Deque::Deque<DataType> *dq) {
     }
 }
 
-class CheckOperationsTime : public ::testing::Test {
+class Check : public ::testing::Test {
 public:
     Deque::Deque<int> *dq;
 
@@ -59,28 +59,30 @@ protected:
     }
 };
 
-TEST_F(CheckOperationsTime, CheckPushBack) {
+TEST_F(Check, CheckPushBack) {
     for (size_t i = 0; i < numberOfElements; ++i) {
         dq->push_back(rand() % module);
         time += getTime() - t_time;
         t_time = getTime();
     }
 
+    ASSERT_EQ(dq->size(), numberOfElements);
     ASSERT_LE(time / numberOfElements, o1_time);
 }
 
 
-TEST_F(CheckOperationsTime, CheckPushFront) {
+TEST_F(Check, CheckPushFront) {
     for (size_t i = 0; i < numberOfElements; ++i) {
         dq->push_front(rand() % module);
         time += getTime() - t_time;
         t_time = getTime();
     }
 
+    ASSERT_EQ(dq->size(), numberOfElements);
     ASSERT_LE(time / numberOfElements, o1_time);
 }
 
-TEST_F(CheckOperationsTime, CheckPopFront) {
+TEST_F(Check, CheckPopFront) {
     fill(dq);
     t_time = getTime();
 
@@ -90,23 +92,26 @@ TEST_F(CheckOperationsTime, CheckPopFront) {
         t_time = getTime();
     }
 
+    std::cout << dq->empty() << std::endl;
+    ASSERT_FALSE(!dq->empty());
     ASSERT_LE(time / numberOfElements, o1_time);
 }
 
-TEST_F(CheckOperationsTime, CheckPopBack) {
+TEST_F(Check, CheckPopBack) {
     fill(dq);
     t_time = getTime();
 
-    for (size_t i = 0; i < numberOfElements - 1; ++i) {
+    for (size_t i = 0; i < numberOfElements; ++i) {
         dq->pop_back();
         time += getTime() - t_time;
         t_time = getTime();
     }
 
+    ASSERT_FALSE(!dq->empty());
     ASSERT_LE(time / numberOfElements, o1_time);
 }
 
-TEST_F(CheckOperationsTime, ShuffledOperations) {
+TEST_F(Check, ShuffledOperations) {
     dq->push_back(rand() % module);
 
     time = o1_time;
@@ -138,10 +143,10 @@ TEST_F(CheckOperationsTime, ShuffledOperations) {
     ASSERT_LE(time / ((numberOfElements - 1) * 2 + 1), o1_time);
 }
 
-TEST_F(CheckOperationsTime, OperatorSquareBracesNoChange) {
+TEST_F(Check, OperatorSquareBracesNoChange) {
     fill(dq);
 
-    time = getTime();
+    t_time = getTime();
     int value = 0;
 
     for (size_t i = 0; i < numberOfElements; ++i) {
@@ -153,10 +158,10 @@ TEST_F(CheckOperationsTime, OperatorSquareBracesNoChange) {
     ASSERT_LE(time / numberOfElements, o1_time);
 }
 
-TEST_F(CheckOperationsTime, OperatorSquareBraces) {
+TEST_F(Check, OperatorSquareBraces) {
     fill(dq);
 
-    time = getTime();
+    t_time = getTime();
 
     for (size_t i = 0; i < numberOfElements; ++i) {
         (*dq)[rand() % numberOfElements] = rand() % module;
@@ -165,6 +170,70 @@ TEST_F(CheckOperationsTime, OperatorSquareBraces) {
     }
 
     ASSERT_LE(time / numberOfElements, o1_time);
+}
+
+TEST_F(Check, PushAndPop) {
+    fill(dq);
+
+    t_time = getTime();
+
+    for (size_t i = 0; i < 8 * numberOfElements; ++i) {
+        switch (i % 8) {
+            case 1:
+                for (size_t j = 0; j < 4; ++j)
+                    dq->push_front(rand() % module);
+                break;
+            case 2:
+                for (size_t j = 0; j < 4; ++j)
+                    dq->pop_back();
+                break;
+            case 3:
+                for (size_t j = 0; j < 4; ++j)
+                    dq->pop_front();
+                break;
+            default:
+                for (size_t j = 0; j < 4; ++j)
+                    dq->push_back(rand() % module);
+                break;
+        }
+
+        time += getTime() - t_time;
+        t_time = getTime();
+    }
+
+    ASSERT_LE(time / numberOfElements, o1_time);
+}
+
+template <typename Iterator>
+void testLoop(Iterator begin, Iterator end, double &time) {
+    time = 0;
+    double t_time = getTime();
+
+    for (Iterator it = begin; it != end; ++it) {
+        *it;
+        time += getTime() - t_time;
+        t_time = getTime();
+    }
+}
+
+TEST_F(Check, IteratorsLoop) {
+    fill(dq);
+
+    double time = 0;
+    testLoop(dq->begin(), dq->end(), time);
+    ASSERT_LE(time / (dq->end() - dq->begin()), o1_time);
+
+    time = 0;
+    testLoop(dq->cbegin(), dq->cend(), time);
+    ASSERT_LE(time / (dq->cend() - dq->cbegin()), o1_time);
+
+    time = 0;
+    testLoop(dq->rbegin(), dq->rend(), time);
+    ASSERT_LE(time / dq->size(), o1_time);
+
+    time = 0;
+    testLoop(dq->rcbegin(), dq->rcend(), time);
+    ASSERT_LE(time / dq->size(), o1_time);
 }
 
 #endif //DEQUE_TESTS_H

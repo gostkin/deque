@@ -93,7 +93,8 @@ namespace Deque {
 
     public:
         enum class Errors {
-            DE_EMPTY
+            DE_EMPTY,
+            DE_OUT_OF_RANGE
         };
 
         typedef DequeIterator <Deque <T>, std::random_access_iterator_tag, T, long long, T *, T &> iterator;
@@ -167,10 +168,16 @@ namespace Deque {
         }
 
         const T &operator[](size_t index) const {
+            if (l_pointer_ + index + 1 > r_pointer_)
+                throw Errors::DE_OUT_OF_RANGE;
+
             return data_[l_pointer_ + index + 1];
         }
 
         T &operator[](size_t index) {
+            if (l_pointer_ + index + 1 > r_pointer_)
+                throw Errors::DE_OUT_OF_RANGE;
+
             return data_[l_pointer_ + index + 1];
         }
 
@@ -337,6 +344,10 @@ namespace Deque {
 
         reference operator[](long long index) {
             return &(*deque_)[pointer_ + index];
+        }
+
+        long long getPointer() const {
+            return pointer_;
         }
     };
 
