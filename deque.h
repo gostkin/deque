@@ -52,7 +52,7 @@ namespace Deque {
             if (4 * size() <= max_size_)
                 return ReallocationType::RT_DECREASE;
             if (l_pointer_ == static_cast<size_t>(-1) || r_pointer_ == max_size_ - 1) {
-                if (size() <= max_size_ / 2)
+                if (size() < max_size_ / 2)
                     return ReallocationType::RT_STAY;
                 else
                     return ReallocationType::RT_INCREASE;
@@ -63,6 +63,9 @@ namespace Deque {
 
         void reallocate(ReallocationType type) {
             if (type == ReallocationType::RT_NONE)
+                return;
+
+            if (max_size_ == 2 && type == ReallocationType::RT_DECREASE)
                 return;
 
             size_t size_ = size();
@@ -77,6 +80,9 @@ namespace Deque {
                 max_size_ /= 2;
 
             data_ = new T[max_size_];
+            for (size_t i = 0; i < max_size_; ++i)
+                data_[i] = 0;
+
             copy(data_ + max_size_ / 4, copy_, size_);
 
             l_pointer_ = max_size_ / 4 - 1;
@@ -214,6 +220,15 @@ namespace Deque {
 
         const_reverse_iterator rend() const {
             return rcend();
+        }
+
+        void print() {
+            for (size_t i = 0; i < max_size_; ++i) {
+                std::cout << data_[i] << ' ';
+            }
+            std::cout << std::endl;
+
+            std::cout << "SIZE: " << size() << " MAX_SIZE: " << max_size_ << std::endl;
         }
     };
 
