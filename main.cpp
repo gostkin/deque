@@ -8,13 +8,13 @@
 #include "deque.h"
 
 template <typename T>
-void pp(Deque<T> &d){
+void pp(Deque::Deque<T> &d){
     d[0] = 1;
     for (int i = 0; i < d.size(); ++i)
         std::cout << d[i] << std::endl;
 }
 int main() {
-    Deque<int> d;
+    Deque::Deque<int> d;
 
     //d.print();
     d.push_back(2);
@@ -31,17 +31,17 @@ int main() {
     //pp(d);
 
     //std::cout << "LEEL\n";
-    Deque<int> kek(d);
+    Deque::Deque<int> kek(d);
     //pp(kek);
     //std::cout << d.size() << std::endl;
     //std::cout << d.size() << std::endl;
     //pp(kek);
 
     //kek.print();
-    Deque<int>::const_iterator it = kek.cbegin(), it1 = kek.cend();
+    Deque::Deque<int>::const_iterator it = kek.cbegin(), it1 = kek.cend();
     std::cout << kek.size() << std::endl;
     //it.print();
-    it1.print();
+    //it1.print();
     //it.print();
     //it.print();
     //std::cout << std::endl;
