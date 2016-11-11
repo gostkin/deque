@@ -229,11 +229,11 @@ TEST_F(Check, IteratorsLoop) {
 
     time = 0;
     testLoop(dq->rbegin(), dq->rend(), time);
-    ASSERT_LE(time / dq->size(), o1_time);
+    ASSERT_LE(time / (dq->rend() - dq->rbegin()), o1_time);
 
     time = 0;
     testLoop(dq->rcbegin(), dq->rcend(), time);
-    ASSERT_LE(time / dq->size(), o1_time);
+    ASSERT_LE(time / (dq->rcend() - dq->rcbegin()), o1_time);
 }
 
 #endif //DEQUE_TESTS_H
