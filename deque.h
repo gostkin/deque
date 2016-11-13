@@ -342,7 +342,7 @@ namespace Deque {
         }
 
         reference operator[](long long index) {
-            return &(*deque_)[pointer_ + index];
+            return deque_->operator[](pointer_ + index);
         }
 
         long long getPointer() const {

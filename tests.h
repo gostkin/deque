@@ -34,8 +34,8 @@ namespace DequeTesting {
         t_time = getTime();
     }
 
-    template <typename DataType>
-    void fill(Deque::Deque <DataType> *dq) {
+    template <typename DequeType>
+    void fill(DequeType *dq) {
         for (size_t i = 0; i < numberOfElements; ++i) {
             dq->push_back(rand() % module);
         }
@@ -251,7 +251,138 @@ namespace DequeTesting {
 
         time = 0;
         testLoop(dq->crbegin(), dq->crend(), time);
-        ASSERT_LE(time / (dq->rcend() - dq->rcbegin()), o1_time);
+        ASSERT_LE(time / (dq->crend() - dq->crbegin()), o1_time);
+    }
+
+    TEST_F(Compare, StandardOperations) {
+        for (size_t i = 0; i < numberOfElements; ++i) {
+            int k = rand() % module - module / 2;
+            dq->push_back(k);
+            dq_std->push_back(k);
+            ASSERT_EQ(dq->size(), dq_std->size());
+            ASSERT_EQ(dq->front(), dq_std->front());
+            ASSERT_EQ(dq->back(), dq_std->back());
+        }
+        for (size_t i = 0; i < numberOfElements; ++i) {
+            int k = rand() % module - module / 2;
+            dq->push_front(k);
+            dq_std->push_front(k);
+            ASSERT_EQ(dq->size(), dq_std->size());
+            ASSERT_EQ(dq->front(), dq_std->front());
+            ASSERT_EQ(dq->back(), dq_std->back());
+        }
+        const Deque::Deque<int> *cd = new Deque::Deque<int>(*dq);
+        int constant = 2 * numberOfElements;
+        for (int i = 0; i < numberOfElements / 2; ++i) {
+            int k = rand() % module - module / 2;
+            int index = rand() % (constant);
+            ASSERT_EQ((*dq)[index], (*dq_std)[index]);
+            ASSERT_EQ(dq->size(), cd->size());
+            ASSERT_EQ(cd->front(), dq_std->front());
+            ASSERT_EQ(cd->back(), dq_std->back());
+            (*dq)[index] = k;
+            (*dq_std)[index] = k;
+            ASSERT_EQ((*dq)[index], (*dq_std)[index]);
+            ASSERT_EQ(dq->front(), dq_std->front());
+            ASSERT_EQ(dq->back(), dq_std->back());
+        }
+        delete cd;
+        for (int i = 0; i < constant; ++i) {
+            ASSERT_EQ(dq->front(), dq_std->front());
+            ASSERT_EQ(dq->back(), dq_std->back());
+            if (rand() % 2 == 0) {
+                dq->pop_back();
+                dq_std->pop_back();
+            } else {
+                dq->pop_front();
+                dq_std->pop_front();
+            }
+
+            ASSERT_EQ(dq->size(), dq_std->size());
+        }
+        ASSERT_EQ(dq->empty(), dq_std->empty());
+    }
+
+    template <typename Iter1, typename Iter2>
+    void testIters(Iter1 bdq, Iter1 edq, Iter2 sbdq, Iter2 sedq) {
+        ASSERT_EQ(bdq, bdq);
+        ASSERT_EQ(*bdq, *sbdq);
+        for (int i = 0; i < numberOfElements / 2; ++i) {
+            int k = rand() % (2 * static_cast<int>(numberOfElements) - 20);
+            if (k == 0)
+                k = 1;
+            ASSERT_EQ(*(bdq + k), *(sbdq + k));
+            ASSERT_EQ(*(edq - k), *(sedq - k));
+            ASSERT_EQ(*(k + bdq), *(sbdq + k));
+            ASSERT_EQ((edq - k) - bdq, (sedq - k) - sbdq);
+            ASSERT_LE(bdq, edq - k);
+            ASSERT_EQ(static_cast<int>(bdq.operator[](k)), static_cast<int>(sbdq.operator[](k)));
+        }
+    }
+
+    template <typename Iter1, typename Iter2>
+    void testNonConstIters(Iter1 bdq, Iter1 edq, Iter2 sbdq, Iter2 sedq) {
+        ASSERT_EQ(bdq, bdq);
+        ASSERT_EQ(*bdq, *sbdq);
+        for (int i = 0; i < numberOfElements / 2; ++i) {
+            int k = rand() % (2 * static_cast<int>(numberOfElements) - 20);
+            int l = rand() % module;
+            if (k == 0)
+                k = 1;
+            *(bdq + k) = l;
+            *(sbdq + k) = l;
+            ASSERT_EQ(*(bdq + k), *(sbdq + k));
+            ASSERT_EQ(*(edq - k), *(sedq - k));
+            ASSERT_EQ(*(k + bdq), *(sbdq + k));
+            ASSERT_EQ((edq - k) - bdq, (sedq - k) - sbdq);
+            ASSERT_LE(bdq, edq - k);
+            ASSERT_EQ(static_cast<int>(bdq.operator[](k)), static_cast<int>(sbdq.operator[](k)));
+            ++sbdq;
+            ++bdq;
+            bdq++;
+            sbdq++;
+            bdq += 2;
+            sbdq += 2;
+            ASSERT_EQ(*(bdq + k), *(sbdq + k));
+            ASSERT_EQ(*(edq - k), *(sedq - k));
+            ASSERT_EQ(*(k + bdq), *(sbdq + k));
+            ASSERT_EQ((edq - k) - bdq, (sedq - k) - sbdq);
+            ASSERT_LE(bdq, edq - k);
+            ASSERT_EQ(static_cast<int>(bdq.operator[](k)), static_cast<int>(sbdq.operator[](k)));
+            bdq -= 2;
+            sbdq -= 2;
+            --bdq;
+            --bdq;
+            --sbdq;
+            --sbdq;
+        }
+    }
+
+    TEST_F(Compare, Iterators) {
+        for (size_t i = 0; i < numberOfElements; ++i) {
+            int k = rand() % module - module / 2;
+            dq->push_back(k);
+            dq_std->push_back(k);
+            ASSERT_EQ(dq->size(), dq_std->size());
+            ASSERT_EQ(dq->front(), dq_std->front());
+            ASSERT_EQ(dq->back(), dq_std->back());
+        }
+        for (size_t i = 0; i < numberOfElements; ++i) {
+            int k = rand() % module - module / 2;
+            dq->push_front(k);
+            dq_std->push_front(k);
+            ASSERT_EQ(dq->size(), dq_std->size());
+            ASSERT_EQ(dq->front(), dq_std->front());
+            ASSERT_EQ(dq->back(), dq_std->back());
+        }
+
+        testIters(dq->begin(), dq->end(), dq_std->begin(), dq_std->end());
+        testIters(dq->cbegin(), dq->cend(), dq_std->cbegin(), dq_std->cend());
+        testIters(dq->rbegin(), dq->rend(), dq_std->rbegin(), dq_std->rend());
+        testIters(dq->crbegin(), dq->crend(), dq_std->crbegin(), dq_std->crend());
+
+        testNonConstIters(dq->begin(), dq->end(), dq_std->begin(), dq_std->end());
+        testNonConstIters(dq->rbegin(), dq->rend(), dq_std->rbegin(), dq_std->rend());
     }
 }
 
