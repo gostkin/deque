@@ -1,3 +1,4 @@
+// https://github.com/gostkin/deque
 //
 // Created by Eugeny Gostkin on 10.11.16.
 //
@@ -80,8 +81,6 @@ namespace Deque {
                 max_size_ /= 2;
 
             data_ = new T[max_size_];
-            for (size_t i = 0; i < max_size_; ++i)
-                data_[i] = 0;
 
             copy(data_ + max_size_ / 4, copy_, size_);
 
@@ -107,7 +106,7 @@ namespace Deque {
         }
 
         Deque(const Deque <T> &old) : max_size_(old.max_size_), l_pointer_(old.l_pointer_), r_pointer_(old.r_pointer_) {
-            data_ = new T(max_size_);
+            data_ = new T[max_size_];
             copy(data_, old.data_, max_size_);
         }
 
@@ -209,24 +208,24 @@ namespace Deque {
             return reverse_iterator(end());
         }
 
-        const_reverse_iterator rcbegin() const {
+        const_reverse_iterator crbegin() const {
             return const_reverse_iterator(cend());
         }
 
         const_reverse_iterator rbegin() const {
-            return rcbegin();
+            return crbegin();
         }
 
         reverse_iterator rend() {
             return reverse_iterator(begin());
         }
 
-        const_reverse_iterator rcend() const {
+        const_reverse_iterator crend() const {
             return const_reverse_iterator(cbegin());
         }
 
         const_reverse_iterator rend() const {
-            return rcend();
+            return crend();
         }
 
         void print() {
