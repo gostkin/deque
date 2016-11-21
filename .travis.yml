@@ -5,7 +5,6 @@ addons:
     sources:
     - george-edison55-precise-backports
     - ubuntu-toolchain-r-test
-    - googletest
     packages:
     - gcc-5
     - g++-5
