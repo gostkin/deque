@@ -14,7 +14,7 @@
 #
 #
 
-cmake_minimum_required(VERSION 3.6)
+cmake_minimum_required(VERSION 3.2.2)
 project(deque)
 
 add_compile_options(-O2)
