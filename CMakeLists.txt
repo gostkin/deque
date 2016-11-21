@@ -17,6 +17,9 @@
 cmake_minimum_required(VERSION 3.2.2)
 project(deque)
 
+find_package(Threads)
+find_package(GTest)
+
 add_compile_options(-O2)
 link_libraries(pthread)
 link_libraries(gtest)
