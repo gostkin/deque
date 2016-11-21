@@ -12,6 +12,13 @@ addons:
     - cmake
     - cmake-data
 
+before_install:
+  - git clone https://github.com/google/googletest
+  - cd googletest
+  - cmake .
+  - make
+  - sudo make install
+
 os:
   - linux
 
@@ -24,3 +31,5 @@ script:
   - cmake ../ -DCMAKE_C_COMPILER=gcc-5 -DCMAKE_CXX_COMPILER=g++-5
   - make
   - ./main
+
+sudo: required
