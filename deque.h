@@ -18,20 +18,14 @@
 #ifndef DEQUE_H
 #define DEQUE_H
 
+#include <algorithm>
 #include <cstdlib>
 #include <iostream>
 #include <iterator>
 
-#define BaseDequeIteratorType DequeIterator<DType, category, value_type, difference_type, pointer, reference>
-
 namespace Deque {
-    template <typename CopyType>
-    void copy(CopyType *to, const CopyType *from, size_t number) {
-        for (size_t i = 0; i < number; ++i)
-            to[i] = from[i];
-    }
-
-    template <typename DType, typename category, typename value_type, typename difference_type, typename pointer, typename reference>
+    template <typename DType, typename category, typename value_type, typename difference_type, typename pointer,
+              typename reference>
     class DequeIterator;
 
     template <typename T>
@@ -82,10 +76,9 @@ namespace Deque {
                 return;
 
             size_t size_ = size();
-            T *copy_ = new T[size_];
-            copy(copy_, data_ + l_pointer_ + 1, size_);
+            T *copy_ = std::move(data_);
 
-            delete[] data_;
+            data_ = nullptr;
 
             if (type == ReallocationType::RT_INCREASE)
                 max_size_ *= 2;
@@ -94,7 +87,7 @@ namespace Deque {
 
             data_ = new T[max_size_];
 
-            copy(data_ + max_size_ / 4, copy_, size_);
+            std::copy(copy_ + l_pointer_ + 1, copy_ + l_pointer_ + size_ + 1, data_ + max_size_ / 4);
 
             l_pointer_ = max_size_ / 4 - 1;
             r_pointer_ = l_pointer_ + size_;
@@ -105,25 +98,85 @@ namespace Deque {
     public:
         enum class Errors {
             DE_EMPTY,
+            DE_INTERNAL_ERROR,
+            DE_FULL,
             DE_OUT_OF_RANGE
         };
 
         typedef DequeIterator <Deque <T>, std::random_access_iterator_tag, T, long long, T *, T &> iterator;
-        typedef DequeIterator <const Deque <T>, std::random_access_iterator_tag, T, long long, const T *, const T &> const_iterator;
+        typedef DequeIterator <const Deque <T>, std::random_access_iterator_tag, T, long long, const T *, const T &>
+                const_iterator;
         typedef std::reverse_iterator <iterator> reverse_iterator;
         typedef std::reverse_iterator <const_iterator> const_reverse_iterator;
 
-        Deque() : max_size_(2), l_pointer_(0), r_pointer_(0) {
+        Deque() : max_size_(2),
+                  l_pointer_(0), r_pointer_(0) {
             data_ = new T[2];
+
+            if (!data_)
+                throw Errors::DE_INTERNAL_ERROR;
         }
 
-        Deque(const Deque <T> &old) : max_size_(old.max_size_), l_pointer_(old.l_pointer_), r_pointer_(old.r_pointer_) {
+        Deque(const Deque <T> &old) : max_size_(old.max_size_),
+                                      l_pointer_(old.l_pointer_), r_pointer_(old.r_pointer_) {
             data_ = new T[max_size_];
-            copy(data_, old.data_, max_size_);
+
+            if (!data_)
+                throw Errors::DE_INTERNAL_ERROR;
+
+            std::copy(old.data_, old.data_ + max_size_, data_);
+        }
+
+
+        Deque(Deque <T> &&old) : max_size_(old.max_size_),
+                                 l_pointer_(old.l_pointer_), r_pointer_(old.r_pointer_),
+                                 data_(std::move(old.data_)) {
+            old.max_size_ = 0;
+            old.l_pointer_ = old.r_pointer_ = 0;
+            old.data_ = nullptr;
         }
 
         ~Deque() {
             delete[] data_;
+        }
+
+        Deque <T> &operator=(const Deque <T> &right) {
+            if (&right == this)
+                return *this;
+
+            max_size_ = right.max_size_;
+            l_pointer_ = right.l_pointer_;
+            r_pointer_ = right.r_pointer_;
+
+            delete[] data_;
+            data_ = new T[max_size_];
+
+            if (!data_)
+                throw Errors::DE_INTERNAL_ERROR;
+
+            for (size_t i = 0; i < max_size_; ++i)
+                data_[i] = right.data_[i];
+
+            return *this;
+        }
+
+        Deque <T> &operator=(Deque <T> &&right) {
+            if (&right == this)
+                return *this;
+
+            max_size_ = right.max_size_;
+            l_pointer_ = right.l_pointer_;
+            r_pointer_ = right.r_pointer_;
+
+            delete[] data_;
+
+            data_ = std::move(right.data_);
+            right.data_ = nullptr;
+
+            if (!data_)
+                throw Errors::DE_INTERNAL_ERROR;
+
+            return *this;
         }
 
         inline size_t size() const {
@@ -137,11 +190,17 @@ namespace Deque {
         void push_back(T element) {
             reallocate(needReallocation());
 
+            if (r_pointer_ + 1 == max_size_)
+                throw Errors::DE_FULL;
+
             data_[++r_pointer_] = element;
         }
 
         void push_front(T element) {
             reallocate(needReallocation());
+
+            if (static_cast<size_t>(l_pointer_ + 1) == 0)
+                throw Errors::DE_FULL;
 
             data_[l_pointer_--] = element;
         }
@@ -163,18 +222,30 @@ namespace Deque {
         }
 
         T &front() {
+            if (!size())
+                throw Errors::DE_EMPTY;
+
             return operator[](0);
         }
 
         T front() const {
+            if (!size())
+                throw Errors::DE_EMPTY;
+
             return operator[](0);
         }
 
         T &back() {
+            if (!size())
+                throw Errors::DE_EMPTY;
+
             return operator[](size() - 1);
         }
 
         T back() const {
+            if (!size())
+                throw Errors::DE_EMPTY;
+
             return operator[](size() - 1);
         }
 
@@ -239,18 +310,10 @@ namespace Deque {
         const_reverse_iterator rend() const {
             return crend();
         }
-
-        void print() {
-            for (size_t i = 0; i < max_size_; ++i) {
-                std::cout << data_[i] << ' ';
-            }
-            std::cout << std::endl;
-
-            std::cout << "SIZE: " << size() << " MAX_SIZE: " << max_size_ << std::endl;
-        }
     };
 
-    template <typename DType, typename category, typename value_type, typename difference_type, typename pointer, typename reference>
+    template <typename DType, typename category, typename value_type, typename difference_type, typename pointer,
+              typename reference>
     class DequeIterator : public std::iterator <category, value_type, difference_type, pointer, reference> {
     private:
         long long pointer_;
@@ -261,87 +324,91 @@ namespace Deque {
             deque_ = d;
         }
 
-        DequeIterator(const BaseDequeIteratorType &iter) :
+        DequeIterator(const DequeIterator <DType, category, value_type, difference_type, pointer, reference> &iter) :
                 pointer_(iter.pointer_), deque_(iter.deque_) {}
 
-        BaseDequeIteratorType &operator=(BaseDequeIteratorType right) {
+        DequeIterator <DType, category, value_type, difference_type, pointer, reference> &
+        operator=(DequeIterator <DType, category, value_type, difference_type, pointer, reference> right) {
             pointer_ = right.pointer_;
             deque_ = right.deque_;
 
             return *this;
         }
 
-        BaseDequeIteratorType &operator+=(long long right) {
+        DequeIterator <DType, category, value_type, difference_type, pointer, reference> &operator+=(long long right) {
             pointer_ += right;
             return *this;
         }
 
-        BaseDequeIteratorType &operator-=(long long right) {
+        DequeIterator <DType, category, value_type, difference_type, pointer, reference> &operator-=(long long right) {
             pointer_ += -right;
             return *this;
         }
 
-        BaseDequeIteratorType operator+(long long right) const {
-            BaseDequeIteratorType temp(*this);
+        DequeIterator <DType, category, value_type, difference_type, pointer, reference>
+        operator+(long long right) const {
+            DequeIterator <DType, category, value_type, difference_type, pointer, reference> temp(*this);
 
             return temp += right;
         }
 
-        BaseDequeIteratorType operator-(long long right) const {
-            BaseDequeIteratorType temp(*this);
+        DequeIterator <DType, category, value_type, difference_type, pointer, reference>
+        operator-(long long right) const {
+            DequeIterator <DType, category, value_type, difference_type, pointer, reference> temp(*this);
 
             return temp -= right;
         }
 
-        difference_type operator-(BaseDequeIteratorType right) const {
+        difference_type
+        operator-(DequeIterator <DType, category, value_type, difference_type, pointer, reference> right) const {
             difference_type answer = static_cast<difference_type>(pointer_) - right.pointer_;
 
             return answer;
         }
 
-        BaseDequeIteratorType &operator++() {
+        DequeIterator <DType, category, value_type, difference_type, pointer, reference> &operator++() {
             return operator+=(1);
         }
 
-        BaseDequeIteratorType operator++(int) {
-            BaseDequeIteratorType temp(*this);
+        DequeIterator <DType, category, value_type, difference_type, pointer, reference> operator++(int) {
+            DequeIterator <DType, category, value_type, difference_type, pointer, reference> temp(*this);
             operator+=(1);
 
             return temp;
         }
 
-        BaseDequeIteratorType &operator--() {
+        DequeIterator <DType, category, value_type, difference_type, pointer, reference> &operator--() {
             return operator-=(1);
         }
 
-        BaseDequeIteratorType operator--(int) {
-            BaseDequeIteratorType temp(*this);
+        DequeIterator <DType, category, value_type, difference_type, pointer, reference> operator--(int) {
+            DequeIterator <DType, category, value_type, difference_type, pointer, reference> temp(*this);
             operator-=(1);
 
             return temp;
         }
 
-        bool operator==(BaseDequeIteratorType right) const {
+        bool operator==(DequeIterator <DType, category, value_type, difference_type, pointer, reference> right) const {
             return pointer_ == right.pointer_ && deque_ == right.deque_;
         }
 
-        bool operator!=(BaseDequeIteratorType right) const {
+        bool operator!=(DequeIterator <DType, category, value_type, difference_type, pointer, reference> right) const {
             return !operator==(right);
         }
 
-        bool operator<(BaseDequeIteratorType right) const {
+        bool operator<(DequeIterator <DType, category, value_type, difference_type, pointer, reference> right) const {
             return pointer_ < right.pointer_ && deque_ == right.deque_;
         }
 
-        bool operator>=(BaseDequeIteratorType right) const {
+        bool operator>=(DequeIterator <DType, category, value_type, difference_type, pointer, reference> right) const {
             return !operator<(right);
         }
 
-        bool operator>(BaseDequeIteratorType right) const {
+        bool operator>(DequeIterator <DType, category, value_type, difference_type, pointer, reference> right) const {
             return right < *this;
         }
 
-        bool operator<=(BaseDequeIteratorType right) const {
+        bool operator<=(DequeIterator <DType, category, value_type, difference_type, pointer, reference> right) const {
             return !operator>(right);
         }
 
@@ -356,14 +423,12 @@ namespace Deque {
         reference operator[](long long index) {
             return deque_->operator[](pointer_ + index);
         }
-
-        long long getPointer() const {
-            return pointer_;
-        }
     };
 
-    template <typename DType, typename category, typename value_type, typename difference_type, typename pointer, typename reference>
-    BaseDequeIteratorType operator+(long long left, BaseDequeIteratorType right) {
+    template <typename DType, typename category, typename value_type, typename difference_type, typename pointer,
+              typename reference>
+    DequeIterator <DType, category, value_type, difference_type, pointer, reference>
+    operator+(long long left, DequeIterator <DType, category, value_type, difference_type, pointer, reference> right) {
         return right + left;
     }
 }
