@@ -1,16 +1,13 @@
+[![Build Status](https://travis-ci.org/gostkin/deque.svg?branch=master)](https://travis-ci.org/gostkin/deque)
 # Installation
 
-Just write in console:
-
-`git clone https://github.com/gostkin/deque.git`
+1. Clone the repository
+2. Run `install.sh` script
 
 # Dependencies
 1. `cmake`
 2. `gtest`
-
-# Usage
-1. Include `deque.h` to get full functionality
-2. Compile the whole project to test
+3. `pthread`
 
 # Licence
 Apache 2.0

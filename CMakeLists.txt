@@ -15,7 +15,18 @@
 #
 
 cmake_minimum_required(VERSION 3.2.2)
-project(deque)
+
+set(BIN deque)
+project(${BIN})
+
+if("${CMAKE_C_COMPILER_ID}" STREQUAL "GNU")
+    # require at least gcc 5.2
+    if (CMAKE_C_COMPILER_VERSION VERSION_LESS 5.2)
+        message(FATAL_ERROR "GCC version must be at least 5.2!")
+    endif()
+else()
+    message(WARNING "You are using an unsupported compiler! Compilation has only been tested with GCC.")
+endif()
 
 find_package(Threads)
 find_package(GTest)
@@ -24,9 +35,16 @@ add_compile_options(-O2)
 link_libraries(pthread)
 link_libraries(gtest)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+set(HEADERS deque.h tests.h)
+set(SOURCES main.cpp)
 
-set(SOURCE_FILES main.cpp deque.h tests.h)
-add_executable(deque ${SOURCE_FILES})
+set(REQUIRED_LIBRARIES pthread gtest)
 
-target_link_libraries(deque pthread gtest)
+set(INSTALL_PATH /usr/local/bin/)
+
+add_compile_options(-std=c++14 -g -Wall)
+
+add_executable(${BIN} ${SOURCES})
+
+target_link_libraries(${BIN} ${EXTRA_LIBS} ${REQUIRED_LIBRARIES})
+install(TARGETS ${BIN} DESTINATION ${INSTALL_PATH})

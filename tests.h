@@ -46,6 +46,11 @@ namespace DequeTesting {
         t_time = getTime();
     }
 
+    template <typename T>
+    void doNothing(const T &elem) {
+        return;
+    }
+
     template <typename DequeType>
     void fill(DequeType *dq) {
         for (size_t i = 0; i < numberOfElements; ++i) {
@@ -181,10 +186,12 @@ namespace DequeTesting {
         fill(dq);
 
         t_time = getTime();
-        int value = 0;
+
+        int value;
 
         for (size_t i = 0; i < numberOfElements; ++i) {
             value = (*dq)[rand() % numberOfElements];
+            doNothing(value);
             getNewTime(time, t_time);
         }
 
@@ -285,7 +292,7 @@ namespace DequeTesting {
         }
         const Deque::Deque<int> *cd = new Deque::Deque<int>(*dq);
         int constant = 2 * numberOfElements;
-        for (int i = 0; i < numberOfElements / 2; ++i) {
+        for (size_t i = 0; i < numberOfElements / 2; ++i) {
             int k = rand() % module - module / 2;
             int index = rand() % (constant);
             ASSERT_EQ((*dq)[index], (*dq_std)[index]);
@@ -319,7 +326,7 @@ namespace DequeTesting {
     void testIters(Iter1 bdq, Iter1 edq, Iter2 sbdq, Iter2 sedq) {
         ASSERT_EQ(bdq, bdq);
         ASSERT_EQ(*bdq, *sbdq);
-        for (int i = 0; i < numberOfElements / 2; ++i) {
+        for (size_t i = 0; i < numberOfElements / 2; ++i) {
             int k = rand() % (2 * static_cast<int>(numberOfElements) - 20);
             if (k == 0)
                 k = 1;
@@ -336,7 +343,7 @@ namespace DequeTesting {
     void testNonConstIters(Iter1 bdq, Iter1 edq, Iter2 sbdq, Iter2 sedq) {
         ASSERT_EQ(bdq, bdq);
         ASSERT_EQ(*bdq, *sbdq);
-        for (int i = 0; i < numberOfElements / 2; ++i) {
+        for (size_t i = 0; i < numberOfElements / 2; ++i) {
             int k = rand() % (2 * static_cast<int>(numberOfElements) - 20);
             int l = rand() % module;
             if (k == 0)
